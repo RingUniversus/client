@@ -6,13 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "yarn lint:fix && prettier --write ."
   },
   "dependencies": {
+    "@rainbow-me/rainbowkit": "^1.0.0",
     "@ringuniversus/contracts": "../packages/packages/contracts",
     "@ringuniversus/settings": "../packages/packages/settings",
     "@ringuniversus/types": "../packages/packages/types",
-    "@rainbow-me/rainbowkit": "^1.0.0",
     "framer-motion": "^10.12.12",
     "next": "^13.4.3",
     "react": "^18.2.0",
@@ -25,6 +27,7 @@
     "@types/react": "^18.0.9",
     "eslint": "^8.41.0",
     "eslint-config-next": "^13.4.3",
+    "prettier": "^2.8.8",
     "typescript": "^5.0.4"
   }
 }

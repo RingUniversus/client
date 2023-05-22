@@ -1,146 +1,144 @@
-import React from 'react';
-import Image from "next/legacy/image";
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import type { NextPage } from 'next';
+import React from "react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import type { NextPage } from "next";
 import {
   useAccount,
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
   useWaitForTransaction,
-} from 'wagmi';
-import { abi } from '../contract-abi';
-import FlipCard, { BackCard, FrontCard } from '../components/FlipCard';
-
-const contractConfig = {
-  address: '0x86fbbb1254c39602a7b067d5ae7e5c2bdfd61a30',
-  abi,
-} as const;
+} from "wagmi";
+import * as deployed from "@ringuniversus/contracts";
+import * as types from "@ringuniversus/types";
+import PlayerABI from "@ringuniversus/contracts/abis/RingUniversusPlayer.json";
 
 const Home: NextPage = () => {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  const [totalMinted, setTotalMinted] = React.useState(0n);
-  const { isConnected } = useAccount();
+  const [currentLocation, setCurrentLocation] = React.useState(0n);
+  const [isInited, setIsInited] = React.useState(false);
+  const [playerInfo, setPlayerInfo] = React.useState<types.Player>();
+
+  const { isConnected, address } = useAccount({
+    onConnect({ address, connector, isReconnected }) {
+      console.log("Connected", { address, connector, isReconnected });
+    },
+  });
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
-    ...contractConfig,
-    functionName: 'mint',
+    address: deployed.player.CONTRACT_ADDRESS,
+    abi: PlayerABI,
+    functionName: "initPlayer",
+    args: ["Conight"],
+    enabled: false,
   });
 
   const {
-    data: mintData,
-    write: mint,
-    isLoading: isMintLoading,
-    isSuccess: isMintStarted,
-    error: mintError,
+    data: initData,
+    write: initPlayer,
+    isLoading: isInitLoading,
+    isSuccess: isInitStarted,
+    error: initError,
   } = useContractWrite(contractWriteConfig);
 
-  const { data: totalSupplyData } = useContractRead({
-    ...contractConfig,
-    functionName: 'totalSupply',
-    watch: true,
+  const { data: getCurrentMoveInfo } = useContractRead({
+    address: deployed.player.CONTRACT_ADDRESS,
+    abi: PlayerABI,
+    functionName: "currentMoveInfo",
+    args: [address],
+    enabled: false,
   });
+
+  const { data: getCurrentLocation } = useContractRead({
+    address: deployed.player.CONTRACT_ADDRESS,
+    abi: PlayerABI,
+    functionName: "currentLocation",
+    args: [address],
+    enabled: false,
+  });
+
+  // console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
+
+  const { data: getPlayerInfo }: { data: types.Player | undefined } =
+    useContractRead({
+      address: deployed.player.CONTRACT_ADDRESS,
+      abi: PlayerABI,
+      functionName: "playerInfo",
+      args: [address],
+      watch: false,
+      enabled: false,
+    });
 
   const {
     data: txData,
     isSuccess: txSuccess,
     error: txError,
   } = useWaitForTransaction({
-    hash: mintData?.hash,
+    hash: initData?.hash,
   });
 
   React.useEffect(() => {
-    if (totalSupplyData) {
-      setTotalMinted(totalSupplyData);
+    if (getPlayerInfo) {
+      setPlayerInfo(getPlayerInfo);
+      setIsInited(true);
     }
-  }, [totalSupplyData]);
+    // if (getCurrentLocation) {
+    //   console.log("getCurrentLocation:", getCurrentLocation);
+    //   setCurrentLocation(getCurrentLocation);
+    // }
+  }, [getPlayerInfo]);
 
-  const isMinted = txSuccess;
+  function initPlayerByContract() {
+    console.log("Clicked!");
+    console.log(initPlayer);
+    initPlayer?.();
+  }
 
   return (
     <div className="page">
       <div className="container">
-        <div style={{ flex: '1 1 auto' }}>
-          <div style={{ padding: '24px 24px 24px 0' }}>
-            <h1>NFT Demo Mint</h1>
-            <p style={{ margin: '12px 0 24px' }}>
-              {Number(totalMinted)} minted so far!
-            </p>
+        <div style={{ flex: "1 1 auto" }}>
+          <div style={{ padding: "24px 24px 24px 0" }}>
+            <h1>Ring Universus</h1>
             <ConnectButton />
 
-            {mintError && (
-              <p style={{ marginTop: 24, color: '#FF6257' }}>
-                Error: {mintError.message}
+            {initError && (
+              <p style={{ marginTop: 24, color: "#FF6257" }}>
+                Error: {initError.message}
               </p>
             )}
             {txError && (
-              <p style={{ marginTop: 24, color: '#FF6257' }}>
+              <p style={{ marginTop: 24, color: "#FF6257" }}>
                 Error: {txError.message}
               </p>
             )}
 
-            {mounted && isConnected && !isMinted && (
+            {mounted && isConnected && !isInited && (
               <button
                 style={{ marginTop: 24 }}
-                disabled={!mint || isMintLoading || isMintStarted}
+                disabled={!initPlayer || isInitLoading || isInitStarted}
                 className="button"
-                data-mint-loading={isMintLoading}
-                data-mint-started={isMintStarted}
-                onClick={() => mint?.()}
+                data-init-loading={isInitLoading}
+                data-init-started={isInitStarted}
+                onClick={initPlayerByContract}
               >
-                {isMintLoading && 'Waiting for approval'}
-                {isMintStarted && 'Minting...'}
-                {!isMintLoading && !isMintStarted && 'Mint'}
+                {isInitLoading && "Waiting for approval"}
+                {isInitStarted && "Initing..."}
+                {!isInitLoading && !isInitStarted && "Init Player"}
               </button>
             )}
-          </div>
-        </div>
 
-        <div style={{ flex: '0 0 auto' }}>
-          <FlipCard>
-            <FrontCard isCardFlipped={isMinted}>
-              <Image
-                layout="responsive"
-                src="/nft.png"
-                width="500"
-                height="500"
-                alt="RainbowKit Demo NFT"
-              />
-              <h1 style={{ marginTop: 24 }}>Rainbow NFT</h1>
-              <ConnectButton />
-            </FrontCard>
-            <BackCard isCardFlipped={isMinted}>
-              <div style={{ padding: 24 }}>
-                <Image
-                  src="/nft.png"
-                  width="80"
-                  height="80"
-                  alt="RainbowKit Demo NFT"
-                  style={{ borderRadius: 8 }}
-                />
-                <h2 style={{ marginTop: 24, marginBottom: 6 }}>NFT Minted!</h2>
-                <p style={{ marginBottom: 24 }}>
-                  Your NFT will show up in your wallet in the next few minutes.
-                </p>
-                <p style={{ marginBottom: 6 }}>
-                  View on{' '}
-                  <a href={`https://rinkeby.etherscan.io/tx/${mintData?.hash}`}>
-                    Etherscan
-                  </a>
-                </p>
+            {isConnected && isInited && (
+              <div>
+                <p>Player Nickname: {playerInfo?.nickname}</p>
                 <p>
-                  View on{' '}
-                  <a
-                    href={`https://testnets.opensea.io/assets/rinkeby/${txData?.to}/1`}
-                  >
-                    Opensea
-                  </a>
+                  Current Status:{" "}
+                  {types.PlayerStatusTypeNames[playerInfo!.status]}
                 </p>
               </div>
-            </BackCard>
-          </FlipCard>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 {
-  "name": "with-next-mint-nft",
+  "name": "ring-universus-client",
   "private": true,
-  "version": "0.0.53",
+  "version": "0.0.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ringuniversus/contracts": "../packages/packages/contracts",
+    "@ringuniversus/settings": "../packages/packages/settings",
+    "@ringuniversus/types": "../packages/packages/types",
     "@rainbow-me/rainbowkit": "^1.0.0",
     "framer-motion": "^10.12.12",
     "next": "^13.4.3",

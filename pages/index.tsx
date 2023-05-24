@@ -11,14 +11,29 @@ import {
 import * as deployed from "@ringuniversus/contracts";
 import * as types from "@ringuniversus/types";
 import PlayerABI from "@ringuniversus/contracts/abis/RingUniversusPlayer.json";
+import CoinABI from "@ringuniversus/contracts/abis/RingUniversusCoin.json";
 
 const Home: NextPage = () => {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  const [currentLocation, setCurrentLocation] = React.useState(0n);
+  // location, distRatio, realtimeSpend
+  const [currentLocation, setCurrentLocation] = React.useState<
+    [types.Point, number, number]
+  >([
+    {
+      x: 0,
+      y: 0,
+    },
+    0,
+    0,
+  ]);
   const [isInited, setIsInited] = React.useState(false);
+  const [accountCoinBalance, setAccountCoinBalance] = React.useState<bigint>(
+    -110n
+  );
   const [playerInfo, setPlayerInfo] = React.useState<types.Player>();
+  const [currentMoveInfo, setCurrentMoveInfo] = React.useState();
 
   const { isConnected, address } = useAccount({
     onConnect({ address, connector, isReconnected }) {
@@ -47,7 +62,7 @@ const Home: NextPage = () => {
     abi: PlayerABI,
     functionName: "currentMoveInfo",
     args: [address],
-    enabled: false,
+    enabled: true,
   });
 
   const { data: getCurrentLocation } = useContractRead({
@@ -55,7 +70,17 @@ const Home: NextPage = () => {
     abi: PlayerABI,
     functionName: "currentLocation",
     args: [address],
-    enabled: false,
+    enabled: true,
+    watch: true,
+  });
+
+  const { data: getAccountCoinBalance } = useContractRead({
+    address: deployed.coin.CONTRACT_ADDRESS,
+    abi: CoinABI,
+    functionName: "balanceOf",
+    args: [address],
+    enabled: true,
+    watch: true,
   });
 
   // console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
@@ -66,8 +91,8 @@ const Home: NextPage = () => {
       abi: PlayerABI,
       functionName: "playerInfo",
       args: [address],
-      watch: false,
-      enabled: false,
+      watch: true,
+      enabled: true,
     });
 
   const {
@@ -78,22 +103,70 @@ const Home: NextPage = () => {
     hash: initData?.hash,
   });
 
+  const { config: contractMoveConfig } = usePrepareContractWrite({
+    address: deployed.player.CONTRACT_ADDRESS,
+    abi: PlayerABI,
+    functionName: "move",
+    args: [{ x: -1000000, y: -2000000 }],
+    enabled: true,
+  });
+
+  const {
+    data: moveData,
+    write: movePlayer,
+    isLoading: isMoveLoading,
+    isSuccess: isMoveStarted,
+    error: moveError,
+  } = useContractWrite(contractMoveConfig);
+
+  function startMovePlayerByContract() {
+    console.log("startMovePlayerByContract!");
+    console.log(movePlayer);
+    movePlayer?.();
+  }
+
+  const { config: contractStopConfig } = usePrepareContractWrite({
+    address: deployed.player.CONTRACT_ADDRESS,
+    abi: PlayerABI,
+    functionName: "move",
+    args: [{ x: -1000000, y: -2000000 }],
+    enabled: true,
+  });
+
   React.useEffect(() => {
     if (getPlayerInfo) {
       setPlayerInfo(getPlayerInfo);
       setIsInited(true);
+      // if (playerInfo?.status == types.PlayerStatusType.EXPLORING) {
+      //   setCurrentLocation(getCurrentLocation);
+      // }
     }
-    // if (getCurrentLocation) {
-    //   console.log("getCurrentLocation:", getCurrentLocation);
-    //   setCurrentLocation(getCurrentLocation);
-    // }
-  }, [getPlayerInfo]);
+    if (getCurrentLocation) {
+      console.log("getCurrentLocation:", getCurrentLocation);
+      setCurrentLocation(getCurrentLocation);
+    }
+    if (getCurrentMoveInfo) {
+      console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
+      setCurrentMoveInfo(getCurrentMoveInfo);
+    }
+    if (getAccountCoinBalance) {
+      console.log("getAccountCoinBalance:", getAccountCoinBalance);
+      setAccountCoinBalance(getAccountCoinBalance);
+    }
+  }, [
+    getPlayerInfo,
+    getCurrentLocation,
+    getCurrentMoveInfo,
+    getAccountCoinBalance,
+  ]);
 
   function initPlayerByContract() {
-    console.log("Clicked!");
+    console.log("initPlayerByContract!");
     console.log(initPlayer);
     initPlayer?.();
   }
+
+  console.log("accountCoinBalance:", accountCoinBalance);
 
   return (
     <div className="page">
@@ -133,8 +206,46 @@ const Home: NextPage = () => {
               <div>
                 <p>Player Nickname: {playerInfo?.nickname}</p>
                 <p>
+                  Player Balance:{" "}
+                  {(Number(accountCoinBalance) / (10 * 1e18)).toLocaleString(
+                    "fullwide",
+                    { useGrouping: false }
+                  )}
+                </p>
+                <p>
                   Current Status:{" "}
                   {types.PlayerStatusTypeNames[playerInfo!.status]}
+                </p>
+
+                {playerInfo!.status == types.PlayerStatusType.IDLE && (
+                  <button
+                    disabled={playerInfo!.status != types.PlayerStatusType.IDLE}
+                    // className="button"
+                    data-init-loading={isMoveLoading}
+                    data-init-started={isMoveStarted}
+                    onClick={startMovePlayerByContract}
+                  >
+                    Move
+                  </button>
+                )}
+
+                {playerInfo!.status == types.PlayerStatusType.MOVING && (
+                  <button
+                    disabled={playerInfo!.status != types.PlayerStatusType.IDLE}
+                    // className="button"
+                    data-init-loading={isMoveLoading}
+                    data-init-started={isMoveStarted}
+                    onClick={startMovePlayerByContract}
+                  >
+                    Stop & Claim
+                  </button>
+                )}
+
+                <p>
+                  Current Location: ({currentLocation[0].x.toString()},{" "}
+                  {currentLocation[0].y.toString()}), spend:{" "}
+                  {currentLocation[2].toString()}s, ratio:{" "}
+                  {currentLocation[1].toString()}
                 </p>
               </div>
             )}

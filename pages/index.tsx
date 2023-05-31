@@ -80,8 +80,6 @@ const Home: NextPage = () => {
       watch: true,
     });
 
-  // console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
-
   const { data: getPlayerInfo }: { data: types.Player | undefined } =
     useContractRead({
       address: deployed.player.CONTRACT_ADDRESS,
@@ -131,8 +129,7 @@ const Home: NextPage = () => {
   });
 
   React.useEffect(() => {
-    console.log("getPlayerInfo.createdAt:", getPlayerInfo.createdAt);
-    if (getPlayerInfo.createdAt !== 0n) {
+    if (getPlayerInfo && getPlayerInfo.createdAt !== 0n) {
       console.log("getPlayerInfo:", getPlayerInfo);
       setPlayerInfo(getPlayerInfo);
       setIsInited(true);
@@ -145,7 +142,7 @@ const Home: NextPage = () => {
       setCurrentLocation(getCurrentLocation);
     }
     if (getCurrentMoveInfo) {
-      console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
+      // console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
       setCurrentMoveInfo(getCurrentMoveInfo);
     }
     if (getAccountCoinBalance) {
@@ -161,14 +158,9 @@ const Home: NextPage = () => {
 
   function initPlayerByContract() {
     console.log("initPlayerByContract!");
-    console.log(initPlayer);
+    console.log("initPlayer:", initPlayer);
     initPlayer?.();
   }
-
-  console.log("isInited:", isInited);
-  console.log("mounted:", mounted);
-  console.log("isInited2:", mounted && isConnected && !isInited);
-  // console.log("accountCoinBalance:", accountCoinBalance);
 
   return (
     <div className="page">
@@ -192,7 +184,7 @@ const Home: NextPage = () => {
             {mounted && isConnected && !isInited && (
               <button
                 style={{ marginTop: 24 }}
-                disabled={!initPlayer || isInitLoading || isInitStarted}
+                disabled={isInitLoading || isInitStarted}
                 className="button"
                 data-init-loading={isInitLoading}
                 data-init-started={isInitStarted}
@@ -200,7 +192,7 @@ const Home: NextPage = () => {
               >
                 {isInitLoading && "Waiting for approval"}
                 {isInitStarted && "Initing..."}
-                {!isInitLoading && !isInitStarted && "Init Player"}
+                {!isInitLoading && !isInitStarted && "Init Player."}
               </button>
             )}
 

@@ -18,22 +18,14 @@ const Home: NextPage = () => {
   React.useEffect(() => setMounted(true), []);
 
   // location, distRatio, realtimeSpend
-  const [currentLocation, setCurrentLocation] = React.useState<
-    [types.Point, number, number]
-  >([
-    {
-      x: 0,
-      y: 0,
-    },
-    0,
-    0,
-  ]);
+  const [currentLocation, setCurrentLocation] =
+    React.useState<[types.Point, number, number]>();
   const [isInited, setIsInited] = React.useState(false);
-  const [accountCoinBalance, setAccountCoinBalance] = React.useState<bigint>(
-    -110n
-  );
+  const [accountCoinBalance, setAccountCoinBalance] =
+    React.useState<bigint>(0n);
   const [playerInfo, setPlayerInfo] = React.useState<types.Player>();
-  const [currentMoveInfo, setCurrentMoveInfo] = React.useState();
+  const [currentMoveInfo, setCurrentMoveInfo] =
+    React.useState<types.PlayerMoveInfo>();
 
   const { isConnected, address } = useAccount({
     onConnect({ address, connector, isReconnected }) {
@@ -57,7 +49,9 @@ const Home: NextPage = () => {
     error: initError,
   } = useContractWrite(contractWriteConfig);
 
-  const { data: getCurrentMoveInfo } = useContractRead({
+  const {
+    data: getCurrentMoveInfo,
+  }: { data: types.PlayerMoveInfo | undefined } = useContractRead({
     address: deployed.player.CONTRACT_ADDRESS,
     abi: PlayerABI,
     functionName: "currentMoveInfo",
@@ -65,7 +59,9 @@ const Home: NextPage = () => {
     enabled: true,
   });
 
-  const { data: getCurrentLocation } = useContractRead({
+  const {
+    data: getCurrentLocation,
+  }: { data: [types.Point, number, number] | undefined } = useContractRead({
     address: deployed.player.CONTRACT_ADDRESS,
     abi: PlayerABI,
     functionName: "currentLocation",
@@ -74,14 +70,15 @@ const Home: NextPage = () => {
     watch: true,
   });
 
-  const { data: getAccountCoinBalance } = useContractRead({
-    address: deployed.coin.CONTRACT_ADDRESS,
-    abi: CoinABI,
-    functionName: "balanceOf",
-    args: [address],
-    enabled: true,
-    watch: true,
-  });
+  const { data: getAccountCoinBalance }: { data: bigint | undefined } =
+    useContractRead({
+      address: deployed.coin.CONTRACT_ADDRESS,
+      abi: CoinABI,
+      functionName: "balanceOf",
+      args: [address],
+      enabled: true,
+      watch: true,
+    });
 
   // console.log("getCurrentMoveInfo:", getCurrentMoveInfo);
 
@@ -134,7 +131,9 @@ const Home: NextPage = () => {
   });
 
   React.useEffect(() => {
-    if (getPlayerInfo) {
+    console.log("getPlayerInfo.createdAt:", getPlayerInfo.createdAt);
+    if (getPlayerInfo.createdAt !== 0n) {
+      console.log("getPlayerInfo:", getPlayerInfo);
       setPlayerInfo(getPlayerInfo);
       setIsInited(true);
       // if (playerInfo?.status == types.PlayerStatusType.EXPLORING) {
@@ -166,14 +165,17 @@ const Home: NextPage = () => {
     initPlayer?.();
   }
 
-  console.log("accountCoinBalance:", accountCoinBalance);
+  console.log("isInited:", isInited);
+  console.log("mounted:", mounted);
+  console.log("isInited2:", mounted && isConnected && !isInited);
+  // console.log("accountCoinBalance:", accountCoinBalance);
 
   return (
     <div className="page">
       <div className="container">
         <div style={{ flex: "1 1 auto" }}>
           <div style={{ padding: "24px 24px 24px 0" }}>
-            <h1>Ring Universus</h1>
+            <h1 style={{ marginBottom: "24px" }}>Ring Universus</h1>
             <ConnectButton />
 
             {initError && (
@@ -242,10 +244,10 @@ const Home: NextPage = () => {
                 )}
 
                 <p>
-                  Current Location: ({currentLocation[0].x.toString()},{" "}
-                  {currentLocation[0].y.toString()}), spend:{" "}
-                  {currentLocation[2].toString()}s, ratio:{" "}
-                  {currentLocation[1].toString()}
+                  Current Location: ({currentLocation![0].x.toString()},{" "}
+                  {currentLocation![0].y.toString()}), spend:{" "}
+                  {currentLocation![2].toString()}s, ratio:{" "}
+                  {currentLocation![1].toString()}
                 </p>
               </div>
             )}

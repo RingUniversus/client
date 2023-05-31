@@ -11,22 +11,22 @@
     "format": "yarn lint:fix && prettier --write ."
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "^1.0.0",
-    "@ringuniversus/contracts": "../packages/packages/contracts",
-    "@ringuniversus/settings": "../packages/packages/settings",
-    "@ringuniversus/types": "../packages/packages/types",
-    "framer-motion": "^10.12.12",
-    "next": "^13.4.3",
+    "@rainbow-me/rainbowkit": "^1.0.1",
+    "@ringuniversus/contracts": "^0.2.4-alpha.0",
+    "@ringuniversus/settings": "^0.2.4-alpha.0",
+    "@ringuniversus/types": "^0.2.4-alpha.0",
+    "framer-motion": "^10.12.16",
+    "next": "^13.4.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "viem": "~0.3.19",
-    "wagmi": "^1.0.1"
+    "viem": "^0.3.40",
+    "wagmi": "^1.0.9"
   },
   "devDependencies": {
-    "@types/node": "^20.2.3",
-    "@types/react": "^18.0.9",
+    "@types/node": "^20.2.5",
+    "@types/react": "^18.2.7",
     "eslint": "^8.41.0",
-    "eslint-config-next": "^13.4.3",
+    "eslint-config-next": "^13.4.4",
     "prettier": "^2.8.8",
     "typescript": "^5.0.4"
   }

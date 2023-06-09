@@ -38,7 +38,7 @@ const Home: NextPage = () => {
     abi: PlayerABI,
     functionName: "initPlayer",
     args: ["Conight"],
-    enabled: false,
+    enabled: true,
   });
 
   const {
